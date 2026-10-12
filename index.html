@@ -212,6 +212,8 @@
 
         <div class="panel">
           <div class="action-buttons">
+            <button id="duplicateBtn">Duplicate</button>
+            <button id="deleteBtn">Delete Selected</button>
             <button id="saveBtn">Save layout</button>
             <button id="loadBtn">Load layout</button>
             <button id="downloadBtn">Download JSON</button>
@@ -347,6 +349,35 @@
         saveLocal();
       }
 
+      function duplicateSelected() {
+        const el = getSelectedElement();
+        if (!el) return;
+
+        const duplicate = { ...el, id: uid(), x: el.x + 24, y: el.y + 24 };
+        elements.push(duplicate);
+        selectedId = duplicate.id;
+        render();
+        syncForm();
+        saveLocal();
+      }
+
+      function deleteSelected() {
+        if (!selectedId) return;
+
+        const currentIndex = elements.findIndex(el => el.id === selectedId);
+        elements = elements.filter(el => el.id !== selectedId);
+
+        if (elements.length > 0) {
+          selectedId = elements[Math.max(0, currentIndex - 1)]?.id || elements[0].id;
+        } else {
+          selectedId = null;
+        }
+
+        render();
+        syncForm();
+        saveLocal();
+      }
+
       function saveLocal() {
         localStorage.setItem('canva_local_layout', JSON.stringify(elements));
       }
@@ -389,6 +420,8 @@
       document.getElementById('addTextBtn').addEventListener('click', () => addElement('text'));
       document.getElementById('addRectBtn').addEventListener('click', () => addElement('rect'));
       document.getElementById('addCircleBtn').addEventListener('click', () => addElement('circle'));
+      document.getElementById('duplicateBtn').addEventListener('click', duplicateSelected);
+      document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
       document.getElementById('saveBtn').addEventListener('click', saveLocal);
       document.getElementById('loadBtn').addEventListener('click', loadLocal);
       document.getElementById('downloadBtn').addEventListener('click', downloadJson);
@@ -425,6 +458,23 @@
           selectedId = null;
           render();
           return;
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        const tag = document.activeElement && document.activeElement.tagName.toLowerCase();
+        const isTyping = tag === 'input' || tag === 'textarea';
+
+        if (isTyping) return;
+
+        if ((event.key === 'Delete' || event.key === 'Backspace') && selectedId) {
+          event.preventDefault();
+          deleteSelected();
+        }
+
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'd' || event.key === 'D')) {
+          event.preventDefault();
+          duplicateSelected();
         }
       });
 
